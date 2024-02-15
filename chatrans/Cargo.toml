@@ -1,0 +1,21 @@
+[package]
+name = "chatrans"
+version = "0.1.1"
+authors = ["Lane Kolbly <lane@rscheme.org>", "Yusux <syusux@gmail.com>"]
+edition = "2021"
+build = "build.rs"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+replay-parser = { version = "0.1.1", path = "../parser" }
+clap = { version = "4.5.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0.79"
+notify = "6.1.1"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+
+[build-dependencies]
+built = { version = "0.7.1", features = [ "git2", "chrono" ] }
