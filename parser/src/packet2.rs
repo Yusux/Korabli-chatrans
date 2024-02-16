@@ -775,20 +775,20 @@ impl<'argtype> Parser<'argtype> {
         i: &'a [u8],
         p: &mut P,
     ) -> Result<usize, ErrorKind> {
-        let mut i = i;
-        let mut total_parsed = 0;
-        while i.len() > 0 {
-            let (remaining, packet) = match self.parse_packet(i) {
+        let mut parsing = i;
+        while parsing.len() > 0 {
+            // println!("first 10 bytes: {}", i[0..10].iter().map(|x| format!("{:02x}", x)).collect::<Vec<_>>().join(" "));
+            let (remaining, packet) = match self.parse_packet(parsing) {
                 Ok(x) => x,
                 Err(_) => {
                     break;
                 }
             };
-            i = remaining;
-            total_parsed += packet.packet_size as usize;
+            // println!("OK");
+            parsing = remaining;
             p.process(packet);
         }
-        Ok(total_parsed)
+        Ok(i.len() - parsing.len())
     }
 }
 

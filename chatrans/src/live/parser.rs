@@ -2,12 +2,12 @@ use std::{
     fs::{read_to_string, File},
     io::{Read, Seek, SeekFrom},
     path::PathBuf,
-    sync::mpsc,
+    // sync::mpsc,
     thread::sleep,
     time::Duration,
 };
 use anyhow::{Result, anyhow};
-use notify::{Watcher, recommended_watcher, RecursiveMode};
+// use notify::{Watcher, recommended_watcher, RecursiveMode};
 use serde_json;
 use tracing::{info, debug};
 
@@ -76,22 +76,22 @@ pub fn parse_live_chat(
     // current file offset
     let mut offset = 0;
     // create a watcher
-    let (tx, rx) = mpsc::channel();
-    let mut watcher = recommended_watcher(move |res| tx.send(res).unwrap())?;
-    watcher.watch(
-        &temp_replay,
-        RecursiveMode::NonRecursive,
-    )?;
+    // let (tx, rx) = mpsc::channel();
+    // let mut watcher = recommended_watcher(move |res| tx.send(res).unwrap())?;
+    // watcher.watch(
+    //     &temp_replay,
+    //     RecursiveMode::NonRecursive,
+    // )?;
     loop {
-        // read the file from the current offset to the end
-        buffer.truncate(0);
+        // read the file from the current offset to the end 
         file.seek(SeekFrom::Start(offset as u64))?;
+        debug!("Offset: {:?}, File size: {:?}", offset, file.metadata()?.len());
         offset += file.read_to_end(&mut buffer)? as u64;
 
         // parse the packets
         let parsed_bytes = p.parse_buffer(&buffer, &mut analyzer_set)? as usize;
-        buffer.drain(0..parsed_bytes);
         debug!("Parsed bytes number: {:?}", parsed_bytes);
+        buffer.drain(0..parsed_bytes);
 
         // determine whether to continue
         if !info_json.exists() {
@@ -99,21 +99,22 @@ pub fn parse_live_chat(
         }
 
         // check if the file has been modified
-        loop {
-            match rx.recv_timeout(Duration::from_secs(2)) {
-                Ok(event) => {
-                    sleep(Duration::from_millis(500));
-                    // receive all events
-                    while let Ok(_) = rx.try_recv() {}
-                    debug!("File event: {:?}", event);
-                    break;
-                }
-                _ => {
-                    debug!("No file event");
-                    continue;
-                }
-            }
-        }
+        // loop {
+        //     match rx.recv_timeout(Duration::from_secs(2)) {
+        //         Ok(event) => {
+        //             sleep(Duration::from_millis(500));
+        //             // receive all events
+        //             while let Ok(_) = rx.try_recv() {}
+        //             debug!("File event: {:?}", event);
+        //             break;
+        //         }
+        //         _ => {
+        //             debug!("No file event");
+        //             continue;
+        //         }
+        //     }
+        // }
+        sleep(Duration::from_secs(2));
     }
 
     info!("Parsing live chat from temp replay done");
