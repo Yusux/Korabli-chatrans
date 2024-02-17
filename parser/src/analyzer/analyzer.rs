@@ -1,7 +1,3 @@
-pub trait AnalyzerBuilder {
-    fn build(&self, meta: &crate::ReplayMeta) -> Box<dyn Analyzer>;
-}
-
 pub trait Analyzer {
     fn process(&mut self, packet: &crate::packet2::Packet<'_, '_>);
     fn finish(&self);

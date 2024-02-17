@@ -1,8 +1,20 @@
-use crate::analyzer::decoder::{DecodedPacket, DecodedPacketPayload};
-use crate::analyzer::{Analyzer, AnalyzerBuilder};
-use crate::packet2::Packet;
-use std::collections::HashMap;
-use std::convert::TryInto;
+use replay_parser::analyzer::decoder::{DecodedPacket, DecodedPacketPayload};
+use replay_parser::analyzer::Analyzer;
+use replay_parser::packet2::Packet;
+use std::{
+    collections::HashMap,
+    convert::TryInto,
+};
+use async_channel::Sender;
+use tracing::info;
+
+#[derive(Debug, Clone)]
+pub struct ChatMessage {
+    pub clock: f32,
+    pub sender: String,
+    pub audience: String,
+    pub message: String,
+}
 
 pub struct ChatLoggerBuilder;
 
@@ -12,19 +24,25 @@ impl ChatLoggerBuilder {
     }
 }
 
-impl AnalyzerBuilder for ChatLoggerBuilder {
-    fn build(&self, meta: &crate::ReplayMeta) -> Box<dyn Analyzer> {
-        let version = crate::version::Version::from_client_exe(&meta.clientVersionFromExe);
+impl ChatLoggerBuilder {
+    pub fn build(
+        &self,
+        meta: &replay_parser::ReplayMeta,
+        tx:  Sender<ChatMessage>,
+    ) -> Box<dyn Analyzer> {
+        let version = replay_parser::version::Version::from_client_exe(&meta.clientVersionFromExe);
         Box::new(ChatLogger {
             usernames: HashMap::new(),
             version,
+            tx,
         })
     }
 }
 
 pub struct ChatLogger {
     usernames: HashMap<i32, String>,
-    version: crate::version::Version,
+    version: replay_parser::version::Version,
+    tx: Sender<ChatMessage>,
 }
 
 impl Analyzer for ChatLogger {
@@ -40,14 +58,11 @@ impl Analyzer for ChatLogger {
                 ..
             } => {
                 // Chat { entity_id: 409451, sender_id: -1, audience: "battle_prebattle", message: "IDS_OP_01_02_LEEROYY" } ?
-                // println!("{:?}", decoded.payload);
-                // println!("usernames: {:?}", self.usernames);
                 // if sender_id not in usernames
                 if !self.usernames.contains_key(&sender_id) {
-                    // println!("sender_id not in usernames: {}", sender_id);
                     return;
                 }
-                println!(
+                info!(
                     "{}: {}: {} {}",
                     decoded.clock,
                     self.usernames.get(&sender_id).unwrap(),
@@ -55,11 +70,17 @@ impl Analyzer for ChatLogger {
                     audience,
                     message
                 );
+                let _ = self.tx.send_blocking(ChatMessage {
+                    clock: decoded.clock,
+                    sender: self.usernames.get(&sender_id).unwrap().clone(),
+                    audience: audience.to_string(),
+                    message: message.to_string(),
+                });
             }
             DecodedPacketPayload::VoiceLine {
                 sender_id, message, ..
             } => {
-                println!(
+                info!(
                     "{}: {}: voiceline {:#?}",
                     decoded.clock,
                     self.usernames.get(&sender_id).unwrap(),
