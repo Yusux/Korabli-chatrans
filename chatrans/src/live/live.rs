@@ -14,7 +14,7 @@ use notify::{
 use async_channel::Sender;
 use tokio::time::{Duration, sleep};
 use tokio_util::sync::CancellationToken;
-use tracing::{info, debug};
+use tracing::{debug, info};
 
 use crate::processor::{ChatMessage, ChatLoggerBuilder};
 
@@ -137,7 +137,6 @@ impl LiveMonitor {
                 )?;
 
                 loop {
-                    info!("Waiting for the game to start");
                     match watcher_rx.recv().await {
                         Ok(Ok(event)) => {
                             debug!("File event: {:?}", event);

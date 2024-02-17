@@ -6,7 +6,7 @@ use tokio::net::{TcpListener, TcpStream};
 use futures_util::{SinkExt, StreamExt};
 use tokio_tungstenite::tungstenite::protocol::Message;
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, error, info};
+use tracing::{debug, info, error};
 
 use crate::processor::ChatMessage;
 use crate::interpreter::Interpreter;
