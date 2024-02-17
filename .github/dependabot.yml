@@ -11,7 +11,7 @@ updates:
       interval: "weekly"
       day: saturday
   - package-ecosystem: "cargo" # See documentation for possible values
-    directory: "/replayshark" # Location of package manifests
+    directory: "/chatrans" # Location of package manifests
     schedule:
       interval: "weekly"
       day: saturday
