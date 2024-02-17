@@ -1,0 +1,156 @@
+<root>
+	<BaseMethods>
+		<start>
+			<Args>
+				<queueType>INT64</queueType>
+				<isSoft>INT64</isSoft>
+			</Args>
+			<Exposed/>
+		</start>
+
+		<stop>
+			<Args>
+				<isSoft>INT64</isSoft>
+			</Args>
+			<Exposed/>
+		</stop>
+
+		<kickPlayer>
+			<Args>
+				<playerID>INT64</playerID>
+			</Args>
+			<Exposed/>
+		</kickPlayer>
+
+		<setReady>
+			<Args>
+				<playerID>INT64</playerID>
+				<queueType>INT64</queueType>
+			</Args>
+			<Exposed/>
+		</setReady>
+
+		<sendInvite>
+			<Args>
+				<accountDBID>INT64</accountDBID>
+				<inviteType>INT64</inviteType>
+			</Args>
+			<Exposed/>
+		</sendInvite>
+
+		<revokeInvite>
+			<Args>
+				<playerID>INT64</playerID>
+			</Args>
+			<Exposed/>
+		</revokeInvite>
+
+		<quitPreBattle>
+			<Exposed/>
+		</quitPreBattle>
+
+		<changeOwner>
+			<Args>
+				<newOwnerID>INT64</newOwnerID>
+			</Args>
+			<Exposed/>
+		</changeOwner>
+
+		<dismiss>
+			<Exposed/>
+		</dismiss>
+
+		<setSelectedQueueType>
+			<Args>
+				<selectedQueueType>INT64</selectedQueueType>
+				<gameParamID>GAMEPARAMS_ID</gameParamID>
+				<shouldEnterMM>BOOL</shouldEnterMM>
+			</Args>
+			<Exposed/>
+		</setSelectedQueueType>
+
+		<setIgnore>
+			<Exposed/>
+		</setIgnore>
+
+		<lock>
+			<Exposed/>
+		</lock>
+
+		<unlock>
+			<Exposed/>
+		</unlock>
+
+		<changeGrants>
+			<Args>
+				<grants>INT64</grants>
+			</Args>
+		</changeGrants>
+
+		<syncPreBattleDef>
+			<Args>
+				<packedPreBattleDef>BLOB</packedPreBattleDef>
+			</Args>
+		</syncPreBattleDef>
+
+		<dev_addBot>
+			<Args>
+				<botOrOwnerShipID>UINT32</botOrOwnerShipID>
+				<needToGenerateRandomShipId>BOOL</needToGenerateRandomShipId>
+			</Args>
+			<Exposed/>
+		</dev_addBot>
+
+		<dev_removeAllBots>
+			<Exposed/>
+		</dev_removeAllBots>
+
+		<dev_setBotsReady>
+			<Exposed/>
+		</dev_setBotsReady>
+
+		<dev_kickBot>
+			<Args>
+				<botId>PLAYER_ID</botId>
+			</Args>
+		</dev_kickBot>
+
+		<dev_inviteBotToDynamicDivision>
+			<Args>
+				<botDef>PLAYER_DEF</botDef>
+			</Args>
+			<ReturnValues>
+				<result> BOOL </result>
+			</ReturnValues>
+		</dev_inviteBotToDynamicDivision>
+
+		<dev_removeBotFromDynamicDivision>
+			<Args>
+				<botID> PLAYER_ID </botID>
+			</Args>
+			<ReturnValues>
+				<result> BOOL </result>
+			</ReturnValues>
+		</dev_removeBotFromDynamicDivision>
+
+		<dev_sendNewOwnerBotToDynamicDivisionManager>
+			<Args>
+				<botID>PLAYER_ID</botID>
+				<divisionId>PRE_BATTLE_ID</divisionId>
+			</Args>
+		</dev_sendNewOwnerBotToDynamicDivisionManager>
+
+	</BaseMethods>
+
+	<ClientMethods>
+		<syncPreBattleDef>
+			<Args>
+				<packedPreBattleDef>BLOB</packedPreBattleDef>
+			</Args>
+		</syncPreBattleDef>
+	</ClientMethods>
+
+	<ofEntity>
+		<Account/>
+	</ofEntity>
+</root>

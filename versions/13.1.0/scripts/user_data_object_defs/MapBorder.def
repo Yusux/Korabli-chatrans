@@ -1,0 +1,18 @@
+<root>
+    <Domain>BASE</Domain>
+    <OptionsFlag>Enable</OptionsFlag>
+    <Properties>
+        <name>
+            <Type> STRING </Type>
+            <Editable>	True	</Editable>
+        </name>
+        <width>
+            <Type> FLOAT </Type>
+            <Editable>	True	</Editable>
+        </width>
+        <length>
+            <Type> FLOAT </Type>
+            <Editable>	True	</Editable>
+        </length>
+    </Properties>
+</root>

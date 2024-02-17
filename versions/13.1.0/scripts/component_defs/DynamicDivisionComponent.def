@@ -1,0 +1,121 @@
+<root>
+	<BaseMethods>
+
+		<changeOwner>
+			<Args>
+				<newOwnerID>INT64</newOwnerID>
+			</Args>
+			<Exposed/>
+		</changeOwner>
+
+		<kickPlayer>
+			<Args>
+				<playerID>INT64</playerID>
+			</Args>
+			<Exposed/>
+		</kickPlayer>
+
+		<sendInvite>
+			<Args>
+				<accountDBID>INT64</accountDBID>
+				<inviteType>INT64</inviteType>
+			</Args>
+			<Exposed/>
+		</sendInvite>
+
+		<revokeInvite>
+			<Args>
+				<playerID>INT64</playerID>
+			</Args>
+			<Exposed/>
+		</revokeInvite>
+
+		<quitPreBattle>
+			<Exposed/>
+		</quitPreBattle>
+
+		<lock>
+			<Exposed/>
+		</lock>
+
+		<unlock>
+			<Exposed/>
+		</unlock>
+
+		<dismiss>
+			<Exposed/>
+		</dismiss>
+
+		<dev_inviteBotToDynamicDivision>
+			<Args>
+				<botName> STRING </botName>
+				<divisionId> PRE_BATTLE_ID </divisionId>
+			</Args>
+			<Exposed> OWN_CLIENT </Exposed>
+		</dev_inviteBotToDynamicDivision>
+
+		<dev_removeBotFromDynamicDivision>
+			<Args>
+				<botName> STRING </botName>
+				<divisionId> PRE_BATTLE_ID </divisionId>
+			</Args>
+			<Exposed> OWN_CLIENT </Exposed>
+		</dev_removeBotFromDynamicDivision>
+
+		<dev_changeDynamicDivisionOwnerToBot>
+			<Args>
+				<botName> STRING </botName>
+				<divisionId> PRE_BATTLE_ID </divisionId>
+			</Args>
+			<Exposed> OWN_CLIENT </Exposed>
+		</dev_changeDynamicDivisionOwnerToBot>
+
+		<dev_fillDynamicDivisionWithBots>
+			<Args>
+				<botList> ARRAY <of> STRING </of> </botList>
+				<divisionId> PRE_BATTLE_ID </divisionId>
+				<playersLimit> INT8 </playersLimit>
+			</Args>
+			<Exposed> OWN_CLIENT </Exposed>
+		</dev_fillDynamicDivisionWithBots>
+
+		<dev_sendNewOwnerBotToDynamicDivisionManager>
+			<Args>
+				<botID> PLAYER_ID </botID>
+				<divisionId> PRE_BATTLE_ID </divisionId>
+			</Args>
+		</dev_sendNewOwnerBotToDynamicDivisionManager>
+
+	</BaseMethods>
+
+	<ClientMethods>
+
+		<dev_inviteBotToDynamicDivision>
+			<Arg>	STRING	</Arg>	<!-- bot name -->
+		</dev_inviteBotToDynamicDivision>
+
+		<dev_removeBotFromDynamicDivision>
+			<Args>
+				<botName>   STRING	</botName>
+			</Args>
+		</dev_removeBotFromDynamicDivision>
+
+		<dev_createDynamicDivisionOfBots>
+			<Args>
+				<botList> ARRAY <of> STRING </of> </botList>
+			</Args>
+		</dev_createDynamicDivisionOfBots>
+
+		<dev_changeDynamicDivisionOwnerToBot>
+			<Args>
+				<botName>   STRING	</botName>
+			</Args>
+		</dev_changeDynamicDivisionOwnerToBot>
+
+	</ClientMethods>
+
+	<ofEntity>
+		<Avatar/>
+	</ofEntity>
+
+</root>
