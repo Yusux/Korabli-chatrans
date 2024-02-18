@@ -70,7 +70,6 @@ impl WebSocketServer {
         let (mut writer, _reader) = ws_stream.split();
     
         loop {
-            info!("Waiting for broadcast message");
             let msg = broadcast_rx.recv().await;
             debug!("Received broadcast message: {:?}", msg);
             match msg {
@@ -82,13 +81,13 @@ impl WebSocketServer {
                             debug!("Sent message successfully");
                         }
                         Err(e) => {
-                            info!("Error sending message when handling connection: {:?}", e);
+                            error!("Error sending message when handling connection: {:?}", e);
                             break;
                         }
                     }
                 }
                 Err(e) => {
-                    info!("Error receiving message when handling connection: {:?}", e);
+                    error!("Error receiving message when handling connection: {:?}", e);
                     break;
                 }
             }
@@ -121,7 +120,7 @@ impl WebSocketServer {
         );
         let message_repeater = tokio::spawn(async move {
             loop {
-                info!("Waiting for message");
+                debug!("Waiting for message");
                 let message = message_rx.recv().await;
                 match message {
                     Ok(msg) => {

@@ -6,7 +6,7 @@ use std::{
     convert::TryInto,
 };
 use async_channel::Sender;
-use tracing::info;
+use tracing::{debug, info};
 
 #[derive(Debug, Clone)]
 pub struct ChatMessage {
@@ -62,7 +62,7 @@ impl Analyzer for ChatLogger {
                 if !self.usernames.contains_key(&sender_id) {
                     return;
                 }
-                info!(
+                debug!(
                     "{}: {}: {} {}",
                     decoded.clock,
                     self.usernames.get(&sender_id).unwrap(),

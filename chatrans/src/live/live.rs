@@ -14,7 +14,7 @@ use notify::{
 use async_channel::Sender;
 use tokio::time::{Duration, sleep};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 
 use crate::processor::{ChatMessage, ChatLoggerBuilder};
 
@@ -125,7 +125,12 @@ impl LiveMonitor {
                 let (watcher_tx, watcher_rx) = async_channel::bounded(1);
                 let mut watcher = RecommendedWatcher::new(
                     move |res| {
-                        watcher_tx.send_blocking(res).unwrap();
+                        match watcher_tx.send_blocking(res) {
+                            Ok(_) => {}
+                            Err(e) => {
+                                warn!("Error sending watcher event: {:?}", e);
+                            }
+                        }
                     },
                     Config::default(),
                 )?;
