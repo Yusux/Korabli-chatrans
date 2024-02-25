@@ -58,7 +58,7 @@ impl Analyzer for ChatLogger {
                 ..
             } => {
                 // Chat { entity_id: 409451, sender_id: -1, audience: "battle_prebattle", message: "IDS_OP_01_02_LEEROYY" } ?
-                // if sender_id not in usernames
+                // If sender_id not in usernames
                 if !self.usernames.contains_key(&sender_id) {
                     return;
                 }
@@ -89,7 +89,6 @@ impl Analyzer for ChatLogger {
             }
             DecodedPacketPayload::OnArenaStateReceived { players, .. } => {
                 for player in players.iter() {
-                    // println!("player: {:#?}", player);
                     self.usernames
                         .insert(player.playerid.try_into().unwrap(), player.username.clone());
                 }

@@ -87,7 +87,6 @@ Options:
 
 ~~游戏安装在 C 盘是因为我只有一块 SSD 😭。虽然这不是一个大问题，但是如果可以的话请支持我，比如给这个仓库一个 star。~~
 
-Open the client and connect to the server. The messages will be sent to the client in real-time. The format of the messages is `[Time] Sender to Audience: Translated |Original|`.
 打开客户端并连接到服务器，消息将实时发送到客户端。消息的格式为 `[时间] 发件人 to 接收者: 翻译 |原始语句|`。
 ![Serving with API - Connecting](images/serving_with_api_connecting.png)
 ![Serving with API - Message Sent](images/serving_with_api_message.png)

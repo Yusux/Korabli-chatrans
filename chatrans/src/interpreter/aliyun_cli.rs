@@ -26,26 +26,26 @@ impl AliyunCli {
 
     /// Calculate the MD5 hash of a string and encode it in base64
     fn md5_base64(s: &str) -> String {
-        // create a new hasher to calculate the MD5 hash
+        // Create a new hasher to calculate the MD5 hash
         let mut hasher = Md5::new();
         hasher.update(s.as_bytes());
-        // get the hash result
+        // Get the hash result
         let md5_result = hasher.finalize();
 
-        // encode the hash result in base64
+        // Encode the hash result in base64
         BASE64_STANDARD.encode(&md5_result)
     }
 
     /// Calculate the HMAC-SHA1 hash of a string and encode it in base64
     fn hmacsha1_base64(data: &str, key: &str) -> String {
-        // create a new HMAC-SHA1 hasher
+        // Create a new HMAC-SHA1 hasher
         let mut hasher: Hmac<Sha1> = Mac::new_from_slice(key.as_bytes()).unwrap();
-        // update the hasher with the data
+        // Update the hasher with the data
         hasher.update(data.as_bytes());
-        // get the hash result
+        // Get the hash result
         let result = hasher.finalize().into_bytes();
 
-        // encode the hash result in base64
+        // Encode the hash result in base64
         BASE64_STANDARD.encode(&result)
     }
 
@@ -62,7 +62,7 @@ impl AliyunCli {
     ) -> String {
         let url = Url::parse(&url).unwrap();
 
-        // set the request parameters
+        // Set the request parameters
         let method = "POST";
         let accept = "application/json";
         let content_type = "application/json;chrset=utf-8";
@@ -71,7 +71,7 @@ impl AliyunCli {
         let host = url.host_str().unwrap();
         let uuid = Uuid::new_v4().to_string();
 
-        // apply md5 and base64 to the body
+        // Apply md5 and base64 to the body
         let body_md5 = Self::md5_base64(&body);
         let string_to_sign = format!(
             "{}\n{}\n{}\n{}\n{}\nx-acs-signature-method:{}\nx-acs-signature-nonce:{}\nx-acs-version:{}\n{}",
@@ -85,14 +85,14 @@ impl AliyunCli {
             SIGNATURE_VERSION,
             path
         );
-        // apply hmac-sha1 and base64 to the string to sign
+        // Apply hmac-sha1 and base64 to the string to sign
         let signature = Self::hmacsha1_base64(&string_to_sign, &self.access_key_secret);
-        // set the authorization header
+        // Set the authorization header
         let authorization = format!(
             "acs {}:{}", self.access_key_id, signature
         );
 
-        // connect to the server
+        // Connect to the server
         let client = reqwest::Client::new();
         let response = client.post(url.clone())
             .header("Accept", accept)

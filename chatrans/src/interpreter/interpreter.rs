@@ -63,7 +63,7 @@ impl Interpreter {
             return text;
         }
 
-        // format the post body
+        // Format the post body
         let post_body = format!(
             "{{\n\"FormatType\": \"{}\",\n\"SourceLanguage\": \"{}\",\n\"TargetLanguage\": \"{}\",\n\"SourceText\": \"{}\",\n\"Scene\": \"{}\"\n}}",
             FORMAT_TYPE,
@@ -73,21 +73,21 @@ impl Interpreter {
             SCENE
         );
 
-        // send the post request
+        // Send the post request
         let response = self.aliyun_cli.as_ref().unwrap().send_post(
             SERVER_URL.to_string(),
             post_body,
         ).await;
 
-        // parse the response
+        // Parse the response
         let response: serde_json::Value = serde_json::from_str(&response).unwrap();
-        // check if the response is valid
+        // Check if the response is valid
         if response["Code"] != "200" || response["Data"]["Translated"].is_null() {
             warn!("Failed to translate the text: {:?}", response);
             return text;
         }
 
-        // return the translated text
+        // Return the translated text
         response["Data"]["Translated"].as_str().unwrap().to_string()
     }
 }

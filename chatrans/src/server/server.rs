@@ -111,7 +111,7 @@ impl WebSocketServer {
         let listener = try_socket.expect("Failed to bind");
         info!("Listening on: {}", addr);
     
-        // spawn a task to listen for incoming messages and broadcast them
+        // Spawn a task to listen for incoming messages and broadcast them
         let (broadcast_tx, broadcast_rx) = async_broadcast::broadcast(128);
         let interpreter = Interpreter::new(
             langeuage,
@@ -142,7 +142,7 @@ impl WebSocketServer {
             }
         });
     
-        // Let's spawn the handling of each connection in a separate task.
+        // Spawn the handling of each connection in a separate task.
         let messgae_handler = tokio::spawn(async move {
             while let Ok((stream, addr)) = listener.accept().await {
                 let broadcast_rx = broadcast_rx.clone();
@@ -159,7 +159,7 @@ impl WebSocketServer {
     }
 
     pub fn run(&self, token: CancellationToken) {
-        // start the websocket server
+        // Start the websocket server
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -167,7 +167,7 @@ impl WebSocketServer {
 
         runtime.block_on(async move {
             tokio::select! {
-                // Step 3: Using cloned token to listen to cancellation requests
+                // Using cloned token to listen to cancellation requests
                 _ = token.cancelled() => {}
                 _ = Self::server(
                     self.ip.clone(),

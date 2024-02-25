@@ -50,20 +50,20 @@ fn main() {
     }
     info!("Use `Ctrl+C` to stop the program");
 
-    // create a channel to pass the chat messages
+    // Create a channel to pass the chat messages
     let (tx, rx) = async_channel::bounded::<ChatMessage>(128);
 
-    // create CancellationToken
+    // Create CancellationToken
     let token = CancellationToken::new();
 
-    // start the monitor
+    // Start the monitor
     let monitor = LiveMonitor::new(input, tx);
     let token_clone = token.clone();
     let monitor_thread = std::thread::spawn(move || {
         monitor.run(token_clone);
     });
 
-    // start the websocket server
+    // Start the websocket server
     let server = WebSocketServer::new(
         client.ip,
         client.port,
@@ -77,7 +77,7 @@ fn main() {
         server.run(token_clone);
     });
 
-    // wait for the interrupt signal
+    // Wait for the interrupt signal
     tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()

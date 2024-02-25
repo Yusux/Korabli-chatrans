@@ -1,5 +1,5 @@
 use std::{
-    fs::{read_to_string, File},
+    fs::{read_to_string, remove_file, File},
     io::{Read, Seek, SeekFrom},
     path::PathBuf,
 };
@@ -46,66 +46,65 @@ impl LiveMonitor {
     }
 
     async fn parse_live_chat(&self) -> Result<()> {
-        // let replay_file = ReplayFile::from_file(replay)?;
         let temp_replay = self.replay_dir.join("temp.wowsreplay");
         let info_json = self.replay_dir.join("tempArenaInfo.json");
         info!("Parsing live chat from temp replay: {:?}", temp_replay);
         info!("Parsing live chat from json: {:?}", info_json);
     
-        // check if the file exists
+        // Check if the file exists
         if !temp_replay.exists() && !info_json.exists() {
             return Err(anyhow!("Temp Replay file not found"));
         }
     
-        // get meta from tempArenaInfo.json
+        // Get meta from tempArenaInfo.json
         let meta = Self::get_meta(&info_json)?;
         debug!("Meta: {:?}", meta);
     
-        // check if the version is valid
+        // Check if the version is valid
         let version_parts: Vec<_> = meta.clientVersionFromExe.split(",").collect();
         debug!("Version parts: {:?}", version_parts);
         if version_parts.len() != 4 {
             return Err(anyhow!("Invalid version"));
         }
     
-        // get datafiles and specs with the version
+        // Get datafiles and specs with the version
         let datafiles = replay_parser::version::Datafiles::new(
             PathBuf::from("versions"),
             replay_parser::version::Version::from_client_exe(&meta.clientVersionFromExe),
         )?;
         let specs = parse_scripts(&datafiles)?;
     
-        // assign processor and parser
+        // Assign processor and parser
         let chatlogger = ChatLoggerBuilder::new();
         let processor = chatlogger.build(&meta, self.tx.clone());
         let mut analyzer_set = replay_parser::analyzer::AnalyzerAdapter::new(vec![processor]);
         let mut p = Parser::new(&specs);
     
-        // monitor the change to the temp.wowsreplay file
-        // open the file
+        // Monitor the change to the temp.wowsreplay file
+        // Open the file
         let mut file = File::open(&temp_replay)?;
-        // create a buffer using Vec<u8>
+        // Create a buffer using Vec<u8>
         let mut buffer: Vec<u8> = Vec::new();
-        // current file offset
+        // Current file offset
         let mut offset = 0;
         loop {
-            // read the file from the current offset to the end 
+            // Read the file from the current offset to the end 
             file.seek(SeekFrom::Start(offset as u64))?;
             debug!("Offset: {:?}, File size: {:?}", offset, file.metadata()?.len());
             offset += file.read_to_end(&mut buffer)? as u64;
     
-            // parse the packets
+            // Parse the packets
             let parsed_bytes = p.parse_buffer(&buffer, &mut analyzer_set)? as usize;
             debug!("Parsed bytes number: {:?}", parsed_bytes);
             buffer.drain(0..parsed_bytes);
     
-            // determine whether to continue
+            // Determine whether to continue
             if !info_json.exists() {
                 info!("tempArenaInfo.json not found, waiting for the next game");
                 break;
             }
             
-            // sleep for 2 seconds
+            // Sleep for 2 seconds
             sleep(Duration::from_secs(2)).await;
         }
     
@@ -119,9 +118,9 @@ impl LiveMonitor {
         info!("Parsing live chat from json: {:?}", info_json);
 
         loop {
-            // check if the file has been created
+            // Check if the file has been created
             if !info_json.exists() {
-                // create a watcher
+                // Create a watcher
                 let (watcher_tx, watcher_rx) = async_channel::bounded(1);
                 let mut watcher = RecommendedWatcher::new(
                     move |res| {
@@ -135,7 +134,7 @@ impl LiveMonitor {
                     Config::default(),
                 )?;
 
-                // watch the file
+                // Watch the file
                 watcher.watch(
                     &self.replay_dir,
                     RecursiveMode::NonRecursive,
@@ -145,7 +144,7 @@ impl LiveMonitor {
                     match watcher_rx.recv().await {
                         Ok(Ok(event)) => {
                             debug!("File event: {:?}", event);
-                            // is create on the file
+                            // Check if create on the file
                             if event.kind == EventKind::Create(CreateKind::Any) && event.paths[0] == info_json {
                                 info!("Entering the game");
                                 break;
@@ -158,7 +157,7 @@ impl LiveMonitor {
                 }
             }
 
-            // parse live chat
+            // Parse live chat
             match self.parse_live_chat().await {
                 Ok(_) => {
                     info!("The game has ended, waiting for the next game");
@@ -170,8 +169,24 @@ impl LiveMonitor {
         }
     }
 
+    fn clean(&self) -> Result<()> {
+        // Remove all files ending with `.temp`
+        let files = self.replay_dir.read_dir()?;
+        for file in files {
+            let file = file?;
+            let path = file.path();
+            if let Some(ext) = path.extension() {
+                if ext == "temp" {
+                    debug!("Removing temp file: {:?}", path);
+                    remove_file(path)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn run(&self, token: CancellationToken) {
-        // start the websocket server
+        // Start the websocket server
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -179,11 +194,21 @@ impl LiveMonitor {
 
         runtime.block_on(async move {
             tokio::select! {
-                // Step 3: Using cloned token to listen to cancellation requests
+                // Using cloned token to listen to cancellation requests
                 _ = token.cancelled() => {}
                 _ = self.monitor() => {}
             }
         });
+
+        // Clean up the temp files
+        match self.clean() {
+            Ok(_) => {
+                info!("Temp files are cleaned");
+            }
+            Err(e) => {
+                warn!("Error cleaning temp files: {:?}", e);
+            }
+        }
 
         info!("Live monitor is stopped");
     }
