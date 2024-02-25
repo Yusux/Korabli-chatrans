@@ -21,9 +21,14 @@ This is a real-time chat interpreter for Korabli developed from [wows-replays](h
 For clients, any WebSocket client can be used to connect to the server. The messages are turned into strings by Chatrans before sending them to the client. A available client is [WebSocket-Receiver](https://github.com/Yusux/WebSocket-Receiver), which is a WebSocket receiving client in HTML. The demo of the client can be found [here](http://lab.yusux.xyz/WebSocket-Receiver). Be cautious that since the server is using `ws` instead of `wss`, you should use `http` instead of `https` to access the website client.
 
 
+### Todo List
+
+- [ ] Add in-gaming chat message interpreter
+
+
 ## Getting Started
 
-The compiled Windows x86_64 executable can be found in the [releases](https://github.com/Yusux/Korabli-chatrans/releases) page. Choose the proper version and download the executable.
+The compiled executable can be found in the [releases](https://github.com/Yusux/Korabli-chatrans/releases) page. Choose the proper version and download the executable, such as `chatrans-v0.1.1-13.1.0-x86_64-windows-msvc.zip`.
 
 You can also compile the project yourself. The following instructions will help you to compile the project.
 

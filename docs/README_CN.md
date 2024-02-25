@@ -20,9 +20,14 @@
 
 对于客户端来说，任何 WebSocket 客户端都可以用来连接到服务器。这些消息在发送到客户端之前由 Chatrans 将其转换为字符串。可用的客户端是 [WebSocket-Receiver](https://github.com/Yusux/WebSocket-Receiver)，它是一个 HTML 格式的 WebSocket 客户端，用于接收 WebSocket 服务器推送的信息。客户端的演示可以在[这里](http://lab.yusux.xyz/WebSocket-Receiver)找到。请注意，由于服务器使用的是 `ws` 而不是 `wss`，因此您应该使用 `http` 而不是 `https` 来访问网站客户端。
 
+
+### 待办事项
+
+- [ ] 游戏内聊天消息的解释界面
+
 ## 开始使用
 
-编译后的 Windows x86_64 可执行文件可以在 [releases](https://github.com/Yusux/Korabli-chatrans/releases) 页面中找到。选择正确的版本并下载可执行文件。
+编译后的可执行文件可以在 [releases](https://github.com/Yusux/Korabli-chatrans/releases) 页面中找到。选择正确的版本并下载可执行文件，例如 `chatrans-v0.1.1-13.1.0-x86_64-windows-msvc.zip`。
 
 您也可以自己编译该项目。以下说明将帮助您编译该项目。
 
