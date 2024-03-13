@@ -1,5 +1,5 @@
 use std::{
-    fs::{read_to_string, remove_file, File},
+    fs::{remove_file, File},
     io::{Read, Seek, SeekFrom},
     path::PathBuf,
 };
@@ -20,7 +20,6 @@ use crate::processor::{ChatMessage, ChatLoggerBuilder};
 
 use replay_parser::{
     parse_scripts,
-    ReplayMeta,
     packet2::Parser,
 };
 
@@ -37,14 +36,6 @@ impl LiveMonitor {
         }
     }
 
-    fn get_meta(
-        info_json : &PathBuf
-    ) -> Result<ReplayMeta> {
-        let info_json = read_to_string(info_json)?;
-        let meta: ReplayMeta = serde_json::from_str(&info_json)?;
-        Ok(meta)
-    }
-
     async fn parse_live_chat(&self) -> Result<()> {
         let temp_replay = self.replay_dir.join("temp.wowsreplay");
         let info_json = self.replay_dir.join("tempArenaInfo.json");
@@ -56,27 +47,15 @@ impl LiveMonitor {
             return Err(anyhow!("Temp Replay file not found"));
         }
     
-        // Get meta from tempArenaInfo.json
-        let meta = Self::get_meta(&info_json)?;
-        debug!("Meta: {:?}", meta);
-    
-        // Check if the version is valid
-        let version_parts: Vec<_> = meta.clientVersionFromExe.split(",").collect();
-        debug!("Version parts: {:?}", version_parts);
-        if version_parts.len() != 4 {
-            return Err(anyhow!("Invalid version"));
-        }
-    
         // Get datafiles and specs with the version
         let datafiles = replay_parser::version::Datafiles::new(
-            PathBuf::from("versions"),
-            replay_parser::version::Version::from_client_exe(&meta.clientVersionFromExe),
+            PathBuf::from("scripts"),
         )?;
         let specs = parse_scripts(&datafiles)?;
     
         // Assign processor and parser
         let chatlogger = ChatLoggerBuilder::new();
-        let processor = chatlogger.build(&meta, self.tx.clone());
+        let processor = chatlogger.build(self.tx.clone());
         let mut analyzer_set = replay_parser::analyzer::AnalyzerAdapter::new(vec![processor]);
         let mut p = Parser::new(&specs);
     

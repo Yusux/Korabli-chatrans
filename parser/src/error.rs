@@ -50,7 +50,6 @@ pub enum ErrorKind {
     },
     #[error("Data file not found")]
     DatafileNotFound {
-        version: crate::version::Version,
         path: String,
     },
     #[error("Decoder ring failure")]

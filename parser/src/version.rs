@@ -46,40 +46,30 @@ impl Version {
 }
 
 #[derive(RustEmbed)]
-#[folder = "../versions/"]
+#[folder = "../addons/"]
 struct Embedded;
 
 pub struct Datafiles {
     base_path: PathBuf,
-    version: Version,
 }
 
 impl Datafiles {
-    pub fn new(base: PathBuf, version: Version) -> Result<Datafiles, ErrorKind> {
-        let mut p = base.clone();
-        p.push(version.to_path());
-        // TODO: Also check the Embedded struct for if this path exists
-        /*if !p.exists() {
-            Err(ErrorKind::UnsupportedReplayVersion(version.to_path()))
-        } else {*/
+    pub fn new(base_path: PathBuf) -> Result<Datafiles, ErrorKind> {
         Ok(Datafiles {
-            base_path: base,
-            version,
+            base_path
         })
-        //}
     }
 
     pub fn get(&self, path: &str) -> Result<Cow<'static, [u8]>, ErrorKind> {
         let mut p = self.base_path.clone();
-        p.push(self.version.to_path());
         p.push(path);
         if !p.exists() {
-            let p = format!("{}/{}", self.version.to_path(), path);
-            if let Some(x) = Embedded::get(&p) {
+            println!("Path does not exist: {:?}", path);
+            
+            if let Some(x) = Embedded::get(&path) {
                 return Ok(x.data);
             }
             return Err(ErrorKind::DatafileNotFound {
-                version: self.version,
                 path: path.to_string(),
             });
         }

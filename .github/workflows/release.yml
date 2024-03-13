@@ -66,6 +66,9 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
+      - name: Pull submodules
+        run: git submodule update --init --recursive
+
       - name: Create Dockerfile for cross-compiling
         if: matrix.build == 'aarch64-linux'
         run: |

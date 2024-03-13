@@ -17,6 +17,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@master
+    - name: pull submodules
+      run: git submodule update --init --recursive
     - name: Build
       run: cargo build --verbose
     - name: Run tests
@@ -26,7 +28,10 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@master
+    - name: Checkout code
+      uses: actions/checkout@master
+    - name: Pull submodules
+      run: git submodule update --init --recursive
     - name: Build
       run: cargo build --verbose --release
     - name: Upload Artifact

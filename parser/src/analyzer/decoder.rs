@@ -89,36 +89,37 @@ pub enum ReplayPlayerProperty {
     ClanId = 5,
     ClanTag = 6,
     CrewParams = 7,
-    DogTag = 8,
-    FragsCount = 9,
-    FriendlyFireEnabled = 10,
-    Id = 11,
-    InvitationsEnabled = 12,
-    IsAbuser = 13,
-    IsAlive = 14,
-    IsBot = 15,
-    IsClientLoaded = 16,
-    IsConnected = 17,
-    IsHidden = 18,
-    IsLeaver = 19,
-    IsPreBattleOwner = 20,
-    IsTShooter = 21,
-    KilledBuildingsCount = 22,
-    IsCookie = 23,
-    MaxHealth = 24,
-    Name = 25,
-    PlayerMode = 26,
-    PreBattleIdOnStart = 27,
-    PreBattleSign = 28,
-    PreBattleId = 29,
-    Realm = 30,
-    ShipComponents = 31,
-    ShipConfigDump = 32,
-    ShipId = 33,
-    ShipParamsId = 34,
-    SkinId = 35,
-    TeamId = 36,
-    TtkStatus = 37,
+    UNKNOWN = 8,
+    DogTag = 9,
+    FragsCount =10,
+    FriendlyFireEnabled = 11,
+    Id = 12,
+    InvitationsEnabled = 13,
+    IsAbuser = 14,
+    IsAlive = 15,
+    IsBot = 16,
+    IsClientLoaded = 17,
+    IsConnected = 18,
+    IsHidden = 19,
+    IsLeaver = 20,
+    IsPreBattleOwner = 21,
+    IsTShooter = 22,
+    KilledBuildingsCount = 23,
+    IsCookie = 24,
+    MaxHealth = 25,
+    Name = 26,
+    PlayerMode = 27,
+    PreBattleIdOnStart = 28,
+    PreBattleSign = 29,
+    PreBattleId = 30,
+    Realm = 31,
+    ShipComponents = 32,
+    ShipConfigDump = 33,
+    ShipId = 34,
+    ShipParamsId = 35,
+    SkinId = 36,
+    TeamId = 37,
+    TtkStatus = 38,
 }
 
 impl From<ReplayPlayerProperty> for i64 {
@@ -485,14 +486,13 @@ where
     'rawpacket: 'argtype,
 {
     fn from(
-        version: &crate::version::Version,
         audit: bool,
         payload: &'rawpacket crate::packet2::PacketType<'replay, 'argtype>,
         packet_type: u32,
     ) -> Self {
         match payload {
             PacketType::EntityMethod(ref em) => {
-                DecodedPacketPayload::from_entity_method(version, audit, em)
+                DecodedPacketPayload::from_entity_method(audit, em)
             }
             PacketType::Camera(camera) => DecodedPacketPayload::Camera(camera),
             PacketType::CameraMode(mode) => match mode {
@@ -605,7 +605,6 @@ where
     }
 
     fn from_entity_method(
-        _version: &crate::version::Version,
         _audit: bool,
         packet: &'rawpacket EntityMethodPacket<'argtype>,
     ) -> Self {
@@ -716,6 +715,7 @@ where
                     1e: Player ship ID
                     1f: Player ship ID (why does this appear twice?)
                     */
+                    println!("{:?}", values);
                     let avatar = values.get(&ReplayPlayerProperty::AvatarId.into()).unwrap();
                     let username = values.get(&ReplayPlayerProperty::Name.into()).unwrap();
                     let username = match username {
@@ -793,7 +793,6 @@ where
     'rawpacket: 'argtype,
 {
     pub fn from(
-        version: &crate::version::Version,
         audit: bool,
         packet: &'rawpacket Packet<'_, '_>,
     ) -> Self {
@@ -801,7 +800,6 @@ where
             clock: packet.clock,
             packet_type: packet.packet_type,
             payload: DecodedPacketPayload::from(
-                version,
                 audit,
                 &packet.payload,
                 packet.packet_type,

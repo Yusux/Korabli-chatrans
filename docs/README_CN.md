@@ -44,11 +44,15 @@
     git clone git@github.com:Yusux/Korabli-chatrans.git
     cd Korabli-chatrans
     ```
-2. 使用如下命令编译项目。
+2. 更新子模块。
+    ``` sh
+    git submodule update --init --recursive
+    ```
+3. 使用如下命令编译项目。
     ``` sh
     cargo build --release
     ```
-3. 编译后的可执行文件 `chatrans.exe` 将在 `target/release/` 目录中找到。
+4. 编译后的可执行文件 `chatrans.exe` 将在 `target/release/` 目录中找到。
 
 ## 使用方式
 

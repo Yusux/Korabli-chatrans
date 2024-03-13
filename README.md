@@ -45,11 +45,15 @@ You can also compile the project yourself. The following instructions will help 
     git clone git@github.com:Yusux/Korabli-chatrans.git
     cd Korabli-chatrans
     ```
-2. Compile the project.
+2. Pull submodules.
+    ``` sh
+    git submodule update --init --recursive
+    ```
+3. Compile the project.
     ``` sh
     cargo build --release
     ```
-3. The compiled executable `chatrans.exe` will be found in `target/release/` directory.
+4. The compiled executable `chatrans.exe` will be found in `target/release/` directory.
 
 ## Usage
 

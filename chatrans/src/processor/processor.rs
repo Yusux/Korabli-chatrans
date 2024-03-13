@@ -27,13 +27,10 @@ impl ChatLoggerBuilder {
 impl ChatLoggerBuilder {
     pub fn build(
         &self,
-        meta: &replay_parser::ReplayMeta,
         tx:  Sender<ChatMessage>,
     ) -> Box<dyn Analyzer> {
-        let version = replay_parser::version::Version::from_client_exe(&meta.clientVersionFromExe);
         Box::new(ChatLogger {
             usernames: HashMap::new(),
-            version,
             tx,
         })
     }
@@ -41,7 +38,6 @@ impl ChatLoggerBuilder {
 
 pub struct ChatLogger {
     usernames: HashMap<i32, String>,
-    version: replay_parser::version::Version,
     tx: Sender<ChatMessage>,
 }
 
@@ -49,7 +45,7 @@ impl Analyzer for ChatLogger {
     fn finish(&self) {}
 
     fn process(&mut self, packet: &Packet<'_, '_>) {
-        let decoded = DecodedPacket::from(&self.version, false, packet);
+        let decoded = DecodedPacket::from(false, packet);
         match decoded.payload {
             DecodedPacketPayload::Chat {
                 sender_id,
