@@ -64,8 +64,6 @@ impl Datafiles {
         let mut p = self.base_path.clone();
         p.push(path);
         if !p.exists() {
-            println!("Path does not exist: {:?}", path);
-            
             if let Some(x) = Embedded::get(&path) {
                 return Ok(x.data);
             }

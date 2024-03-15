@@ -212,46 +212,6 @@ fn parse_def(def: &[u8], aliases: &TypeAliases) -> DefFile {
     };
     def.client_methods.sort_by_key(|method| method.sort_size());
     def
-
-    /*let mut implements = vec![];
-    for child in root.first_child().unwrap().children() {
-        //println!("{}", child.tag_name().name());
-        if child.tag_name().name() == "Implements" {
-            implements = parse_implements(&child);
-            println!("Implements: {:#?}", implements);
-        } else if child.tag_name().name() == "Properties" {
-            let properties = parse_properties(&child);
-            println!("{:#?}", properties);
-        } else if child.tag_name().name() == "ClientMethods" {
-            let mut client_methods = vec![];
-            for method in child.children() {
-                if !method.is_element() {
-                    continue;
-                }
-                client_methods.push(parse_method(&method));
-            }
-            println!("{:#?}", client_methods);
-        } else if child.tag_name().name() == "CellMethods" {
-            let mut cell_methods = vec![];
-            for method in child.children() {
-                if !method.is_element() {
-                    continue;
-                }
-                cell_methods.push(parse_method(&method));
-            }
-            println!("{:#?}", cell_methods);
-        } else if child.tag_name().name() == "BaseMethods" {
-            let mut base_methods = vec![];
-            for method in child.children() {
-                if !method.is_element() {
-                    continue;
-                }
-                base_methods.push(parse_method(&method));
-            }
-            println!("{:#?}", base_methods);
-        }
-    }
-    DefFile { implements }*/
 }
 
 pub fn parse_scripts(
@@ -401,38 +361,5 @@ pub fn parse_scripts(
             internal_properties,
         });
     }
-
-    /*for EntitySpec in entities.iter() {
-        println!(
-            "{} has {} properties and {}/{}/{} base/cell/client methods",
-            EntitySpec.name,
-            EntitySpec.properties.len(),
-            EntitySpec.base_methods.len(),
-            EntitySpec.cell_methods.len(),
-            EntitySpec.client_methods.len()
-        );
-
-        if EntitySpec.name == "Vehicle" || EntitySpec.name == "Avatar" {
-            for (i, property) in EntitySpec.properties.iter().enumerate() {
-                println!(
-                    " - {}: {} size={} type={:?}",
-                    i,
-                    property.name,
-                    property.prop_type.sort_size(),
-                    property.prop_type,
-                );
-            }
-            println!("Methods:");
-            for (i, method) in EntitySpec.client_methods.iter().enumerate() {
-                println!(
-                    " - {}: {}: size {} args: {:?}",
-                    i,
-                    method.name,
-                    method.sort_size(),
-                    method.args
-                );
-            }
-        }
-    }*/
     Ok(entities)
 }

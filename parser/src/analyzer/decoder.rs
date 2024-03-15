@@ -706,16 +706,6 @@ where
                         }
                     }
 
-                    /*
-                    1: Player ID
-                    5: Clan name
-                    16: Username
-                    1c: Equipped equipment (?)
-                    1d: Ship/hull ID? (1 more than player ID)
-                    1e: Player ship ID
-                    1f: Player ship ID (why does this appear twice?)
-                    */
-                    println!("{:?}", values);
                     let avatar = values.get(&ReplayPlayerProperty::AvatarId.into()).unwrap();
                     let username = values.get(&ReplayPlayerProperty::Name.into()).unwrap();
                     let username = match username {

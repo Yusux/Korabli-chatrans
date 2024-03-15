@@ -1,7 +1,7 @@
 use clap::Parser;
 use tokio::signal;
 use tokio_util::sync::CancellationToken;
-use tracing::{info, Level};
+use tracing::{info, error, Level};
 use tracing_subscriber;
 
 use chatrans::live::LiveMonitor;
@@ -86,7 +86,7 @@ fn main() {
             match signal::ctrl_c().await {
                 Ok(()) => {},
                 Err(err) => {
-                    eprintln!("Unable to listen for shutdown signal: {}", err);
+                    error!("Unable to listen for shutdown signal: {}", err);
                 },
             }
         });
