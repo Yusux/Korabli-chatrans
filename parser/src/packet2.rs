@@ -177,6 +177,54 @@ pub struct MapPacket<'replay> {
 }
 
 #[derive(Debug, Serialize)]
+pub struct EntityInfoItem<'replay> {
+    pub unknown: Option<u8>,
+    // pub blob: EntityInfoItemUnion<'replay>,
+    pub blob: &'replay [u8],
+}
+
+impl EntityInfoItem<'_> {
+    pub fn as_string(&self) -> String {
+        // Need to drop the first 4 bytes (length)
+        unsafe { std::str::from_utf8_unchecked(&self.blob[4..]).to_string() }
+    }
+
+    pub fn as_u32(&self) -> u32 {
+        let mut bytes = [0u8; 4];
+        let len = self.blob.len().min(4);
+        bytes[..len].copy_from_slice(&self.blob[..len]);
+        u32::from_le_bytes(bytes)
+    }
+
+    pub fn as_i64(&self) -> i64 {
+        let mut bytes = [0u8; 8];
+        let len = self.blob.len().min(8);
+        bytes[..len].copy_from_slice(&self.blob[..len]);
+        i64::from_le_bytes(bytes)
+    }
+}
+
+/*
+ * Each item in the EntityInfoPacket is split by "40, 2, 0, 0, 0, 105"
+ */
+#[derive(Debug, Serialize)]
+pub struct EntityInfo<'replay> {
+    pub is_bot: bool,
+    pub data: HashMap<u32, EntityInfoItem<'replay>>,
+}
+
+#[derive(Debug, Serialize)]
+/*
+ * This packet is sent to the client with type 0x1D,
+ * containing a list of entities and their properties.
+ * It might be used to replace OnArenaStateReceived.
+ */
+pub struct EntityInfoPacket<'replay> {
+    pub unknown: &'replay [u8],              // before "40, 2, 0, 0, 0, 105"
+    pub entities: Vec<EntityInfo<'replay> >, // after "40, 2, 0, 0, 0, 105"
+}
+
+#[derive(Debug, Serialize)]
 pub enum PacketType<'replay, 'argtype> {
     Position(PositionPacket),
     BasePlayerCreate(BasePlayerCreatePacket<'replay, 'argtype>),
@@ -194,6 +242,7 @@ pub enum PacketType<'replay, 'argtype> {
     CameraMode(u32),
     CameraFreeLook(u8),
     Map(MapPacket<'replay>),
+    EntityInfo(EntityInfoPacket<'replay>),
     Unknown(&'replay [u8]),
 
     /// These are packets which we thought we understood, but couldn't parse
@@ -669,6 +718,68 @@ impl<'argtype> Parser<'argtype> {
         Ok((i, PacketType::Map(packet)))
     }
 
+    fn parse_entity_info<'a, 'b>(
+        &'b mut self,
+        i: &'a [u8],
+    ) -> IResult<&'a [u8], PacketType<'a, 'b>> {
+        fn split_by_sequence<'a>(data: &'a [u8], sequence: &[u8]) -> Vec<&'a [u8]> {
+            let mut result = Vec::new();
+            let mut start = 0;
+        
+            while let Some(index) = data[start..]
+                .windows(sequence.len())
+                .position(|window| window == sequence)
+                .map(|ix| ix + start)
+            {
+                result.push(&data[start..index]);
+                start = index + sequence.len();
+            }
+        
+            result.push(&data[start..]);
+            result
+        }
+        let parts = split_by_sequence(i, &[40, 2, 0, 0, 0, 105]);
+        let (i, unknown) = take(parts[0].len())(i)?;
+        let mut entities = Vec::new();
+        let mut items = HashMap::new();
+        for part in parts[1..].iter() {
+            // The remaining is like "4, 0, 0, 0, 105, 228, 228, 204, 0,"
+            // The first 4 bytes should be the property id following ReplayPlayerProperty
+            // let (new_i, property_id) = le_u32(new_i)?;
+            let (new_i, property_id) = le_u32(*part)?;
+            // The following 1 byte is unknown
+            // let (new_i, unknown2) = le_u8(new_i)?;
+            let (new_i, unknown2) = match new_i.len() {
+                0 => (new_i, None),
+                _ => {
+                    let (new_i, unknown2) = le_u8(new_i)?;
+                    (new_i, Some(unknown2))
+                }
+                
+            };
+            // The following bytes are the property value
+            // Create the item and insert it into the hashmap
+            items.insert(
+                property_id,
+                EntityInfoItem {
+                    unknown: unknown2,
+                    blob: new_i,
+                },
+            );
+            // If the entity is bot, max property_id is 27,
+            // and the items has not key 16,
+            // else the entity is player, and max property_id is 37
+            if (property_id == 27 && !items.contains_key(&16)) || property_id == 37 {
+                entities.push(EntityInfo {
+                    is_bot: property_id == 27,
+                    data: items,
+                });
+                items = HashMap::new();
+            }
+        };
+        Ok((i, PacketType::EntityInfo(EntityInfoPacket { unknown, entities })))
+    }
+
     fn parse_naked_packet<'a, 'b>(
         &'b mut self,
         packet_type: u32,
@@ -676,15 +787,16 @@ impl<'argtype> Parser<'argtype> {
     ) -> IResult<&'a [u8], PacketType<'a, 'b>> {
         /*
         PACKETS_MAPPING = {
-            0x0: BasePlayerCreate,
-            0x1: CellPlayerCreate,
-            0x2: EntityControl,
-            0x3: EntityEnter,
-            0x4: EntityLeave,
-            0x5: EntityCreate,
+            0x0 : BasePlayerCreate,
+            0x1 : CellPlayerCreate,
+            0x2 : EntityControl,
+            0x3 : EntityEnter,
+            0x4 : EntityLeave,
+            0x5 : EntityCreate,
             # 0x6
-            0x7: EntityProperty,
-            0x8: EntityMethod,
+            0x7 : EntityProperty,
+            0x8 : EntityMethod,
+            0x1D: EntityInfo,
             0x27: Map,
             0x22: NestedProperty,
             0x0a: Position
@@ -701,12 +813,13 @@ impl<'argtype> Parser<'argtype> {
             0x8 => self.parse_entity_method_packet(i)?,
             0xA => self.parse_position_packet(i)?,
             0x16 => self.parse_version_packet(i)?,
+            0x1D => self.parse_entity_info(i)?,
             0x23 => self.parse_nested_property_update(i)?,
             0x24 => self.parse_camera_packet(i)?, // Note: We suspect that 0x18 is this also
             0x26 => self.parse_camera_mode_packet(i)?,
             0x27 => self.parse_map_packet(i)?,
-            0x2b => self.parse_player_orientation_packet(i)?,
-            0x2e => self.parse_camera_freelook_packet(i)?,
+            0x2B => self.parse_player_orientation_packet(i)?,
+            0x2E => self.parse_camera_freelook_packet(i)?,
             0x31 => self.parse_cruise_state(i)?,
             _ => self.parse_unknown_packet(i, i.len().try_into().unwrap())?,
         };
@@ -740,6 +853,7 @@ impl<'argtype> Parser<'argtype> {
                 )
             }
         };
+        // debug!("type: {}, size: {}, payload: {:?}", packet_type, packet_size, payload);
         // TODO: Add this back
         //assert!(i.len() == 0);
         Ok((

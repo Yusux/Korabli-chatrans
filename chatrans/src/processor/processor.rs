@@ -6,7 +6,7 @@ use std::{
     convert::TryInto,
 };
 use async_channel::Sender;
-use tracing::{debug, info};
+use tracing::debug;
 
 #[derive(Debug, Clone)]
 pub struct ChatMessage {
@@ -22,9 +22,7 @@ impl ChatLoggerBuilder {
     pub fn new() -> ChatLoggerBuilder {
         ChatLoggerBuilder
     }
-}
 
-impl ChatLoggerBuilder {
     pub fn build(
         &self,
         tx:  Sender<ChatMessage>,
@@ -73,17 +71,7 @@ impl Analyzer for ChatLogger {
                     message: message.to_string(),
                 });
             }
-            DecodedPacketPayload::VoiceLine {
-                sender_id, message, ..
-            } => {
-                info!(
-                    "{}: {}: voiceline {:#?}",
-                    decoded.clock,
-                    self.usernames.get(&sender_id).unwrap(),
-                    message
-                );
-            }
-            DecodedPacketPayload::OnArenaStateReceived { players, .. } => {
+            DecodedPacketPayload::EntityInfo { players, .. } => {
                 for player in players.iter() {
                     self.usernames
                         .insert(player.playerid.try_into().unwrap(), player.username.clone());

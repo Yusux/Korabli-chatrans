@@ -58,9 +58,9 @@ impl Interpreter {
         }
     }
 
-    pub async fn translate(&self, text: String) -> String {
+    pub async fn translate(&self, text: String) -> Option<String> {
         if self.aliyun_cli.is_none() {
-            return text;
+            return None
         }
 
         // Format the post body
@@ -84,10 +84,10 @@ impl Interpreter {
         // Check if the response is valid
         if response["Code"] != "200" || response["Data"]["Translated"].is_null() {
             warn!("Failed to translate the text: {:?}", response);
-            return text;
+            return Some("[WARN] Failed to translate the text through the given API".to_string())
         }
 
         // Return the translated text
-        response["Data"]["Translated"].as_str().unwrap().to_string()
+        Some(response["Data"]["Translated"].as_str().unwrap().to_string())
     }
 }

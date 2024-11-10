@@ -7,6 +7,7 @@ use futures_util::{SinkExt, StreamExt};
 use tokio_tungstenite::tungstenite::protocol::Message;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, info, error};
+use anyhow::Result;
 
 use crate::processor::ChatMessage;
 use crate::interpreter::Interpreter;
@@ -43,16 +44,27 @@ impl WebSocketServer {
         interpreter: &Interpreter,
         message: ChatMessage,
     ) -> String {
-        let translated = interpreter.translate(message.message.clone()).await;
-        // "[Time] Sender to Audience: Translated |Original|"
-        format!(
-            "[{:4.2}s] {:^30} to {:^30}: {} |{}|",
-            message.clock,
-            message.sender,
-            message.audience,
-            translated,
-            message.message,
-        )
+        match interpreter.translate(message.message.clone()).await {
+            Some(translated) => {
+                format!(
+                    "[{:4.2}s] {:^20} to {:^20}: {} |{}|",
+                    message.clock,
+                    message.sender,
+                    message.audience,
+                    message.message,
+                    translated,
+                )
+            }
+            None => {
+                format!(
+                    "[{:4.2}s] {:^20} to {:^20}: {}",
+                    message.clock,
+                    message.sender,
+                    message.audience,
+                    message.message,
+                )
+            }
+        }
     }
 
     async fn handle_connection(

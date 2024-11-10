@@ -1,7 +1,8 @@
-use crate::packet2::{EntityMethodPacket, Packet, PacketType};
+use crate::packet2::{EntityInfoPacket, EntityMethodPacket, Packet, PacketType};
 use crate::unpack_rpc_args;
 use serde_derive::Serialize;
 use std::collections::HashMap;
+use tracing::debug;
 
 /// Enumerates voicelines which can be said in the game.
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -92,34 +93,33 @@ pub enum ReplayPlayerProperty {
     UNKNOWN = 8,
     DogTag = 9,
     FragsCount =10,
-    FriendlyFireEnabled = 11,
-    Id = 12,
-    InvitationsEnabled = 13,
-    IsAbuser = 14,
-    IsAlive = 15,
-    IsBot = 16,
-    IsClientLoaded = 17,
-    IsConnected = 18,
-    IsHidden = 19,
-    IsLeaver = 20,
-    IsPreBattleOwner = 21,
-    IsTShooter = 22,
-    KilledBuildingsCount = 23,
-    IsCookie = 24,
-    MaxHealth = 25,
-    Name = 26,
-    PlayerMode = 27,
-    PreBattleIdOnStart = 28,
-    PreBattleSign = 29,
-    PreBattleId = 30,
-    Realm = 31,
-    ShipComponents = 32,
-    ShipConfigDump = 33,
-    ShipId = 34,
-    ShipParamsId = 35,
-    SkinId = 36,
-    TeamId = 37,
-    TtkStatus = 38,
+    Id = 11,
+    InvitationsEnabled = 12,
+    IsAbuser = 13,
+    IsAlive = 14,
+    IsBot = 15,
+    IsClientLoaded = 16,
+    IsConnected = 17,
+    IsHidden = 18,
+    IsLeaver = 19,
+    IsPreBattleOwner = 20,
+    IsTShooter = 21,
+    KilledBuildingsCount = 22,
+    IsCookie = 23,
+    MaxHealth = 24,
+    Name = 25,
+    PlayerMode = 26,
+    PreBattleIdOnStart = 27,
+    PreBattleSign = 28,
+    PreBattleId = 29,
+    Realm = 30,
+    ShipComponents = 31,
+    ShipConfigDump = 32,
+    ShipId = 33,
+    ShipParamsId = 34,
+    SkinId = 35,
+    TeamId = 36,
+    TtkStatus = 37,
 }
 
 impl From<ReplayPlayerProperty> for i64 {
@@ -128,9 +128,15 @@ impl From<ReplayPlayerProperty> for i64 {
     }
 }
 
+impl From<ReplayPlayerProperty> for u32 {
+    fn from(prop: ReplayPlayerProperty) -> u32 {
+        prop as u32
+    }
+}
+
 /// Contains the information describing a player
 #[derive(Debug, Clone, Serialize)]
-pub struct OnArenaStateReceivedPlayer {
+pub struct ReceivedPlayer {
     /// The username of this player
     pub username: String,
     /// The player's clan
@@ -307,7 +313,7 @@ pub enum DecodedPacketPayload<'replay, 'argtype, 'rawpacket> {
         /// Unknown
         arg2: HashMap<i64, Vec<Option<HashMap<String, String>>>>,
         /// A list of the players in this game
-        players: Vec<OnArenaStateReceivedPlayer>,
+        players: Vec<ReceivedPlayer>,
     },
     CheckPing(u64),
     /// Indicates that the given victim has received damage from one or more attackers.
@@ -408,6 +414,11 @@ pub enum DecodedPacketPayload<'replay, 'argtype, 'rawpacket> {
     /*
     ArtilleryHit(ArtilleryHitPacket<'a>),
     */
+    /// This is a packet of EntityInfo type,
+    /// and since we only need players' info, we only parse the player info.
+    EntityInfo{
+        players: Vec<ReceivedPlayer>,
+    }
 }
 
 fn try_convert_hashable_pickle_to_string(
@@ -490,6 +501,7 @@ where
         payload: &'rawpacket crate::packet2::PacketType<'replay, 'argtype>,
         packet_type: u32,
     ) -> Self {
+        // debug!("payload = {:?}", payload);
         match payload {
             PacketType::EntityMethod(ref em) => {
                 DecodedPacketPayload::from_entity_method(audit, em)
@@ -582,6 +594,9 @@ where
             PacketType::EntityCreate(e) => DecodedPacketPayload::EntityCreate(e),
             PacketType::PropertyUpdate(update) => DecodedPacketPayload::PropertyUpdate(update),
             PacketType::Version(version) => DecodedPacketPayload::Version(version.clone()),
+            PacketType::EntityInfo(ref entity_info) => {
+                DecodedPacketPayload::from_entity_info(entity_info)
+            },
             PacketType::Unknown(u) => {
                 if packet_type == 0x18 {
                     if audit
@@ -611,7 +626,7 @@ where
         let entity_id = &packet.entity_id;
         let method = &packet.method;
         let args = &packet.args;
-        if *method == "onChatMessage" {
+        if *method == "onChatMessageRegular" {
             let target = match &args[1] {
                 crate::rpc::typedefs::ArgValue::String(s) => s,
                 _ => panic!("foo"),
@@ -631,6 +646,7 @@ where
                 message: std::str::from_utf8(&message).unwrap(),
             }
         } else if *method == "onArenaStateReceived" {
+            debug!("onArenaStateReceived {:?}", args);
             let (arg0, arg1) = unpack_rpc_args!(args, i64, i8);
 
             let value = serde_pickle::de::value_from_slice(
@@ -731,7 +747,7 @@ where
                     for (k, v) in values.iter() {
                         raw.insert(*k, format!("{:?}", v));
                     }
-                    players_out.push(OnArenaStateReceivedPlayer {
+                    players_out.push(ReceivedPlayer {
                         username: username.to_string(),
                         clan: clan,
                         avatarid: match avatar {
@@ -766,6 +782,37 @@ where
             }
         } else {
             DecodedPacketPayload::EntityMethod(packet)
+        }
+    }
+
+    fn from_entity_info(packet: &'rawpacket EntityInfoPacket<'replay>) -> Self {
+        let players = packet.entities
+            .iter()
+            .filter_map(|entity| {
+                if entity.is_bot {
+                    return None;
+                } else {
+                    debug!("The raw blobs are:");
+                    debug!("\tusername: {:?}", entity.data.get(&ReplayPlayerProperty::Name.into()).unwrap().blob);
+                    debug!("\tclan: {:?}", entity.data.get(&ReplayPlayerProperty::ClanTag.into()).unwrap().blob);
+                    debug!("\tavatarid: {:?}", entity.data.get(&ReplayPlayerProperty::AvatarId.into()).unwrap().blob);
+                    debug!("\tplayerid: {:?}", entity.data.get(&ReplayPlayerProperty::Id.into()).unwrap().blob);
+                    debug!("\thealth: {:?}", entity.data.get(&ReplayPlayerProperty::MaxHealth.into()).unwrap().blob);
+                    return Some(ReceivedPlayer {
+                        username: entity.data.get(&ReplayPlayerProperty::Name.into()).unwrap().as_string(),
+                        clan: entity.data.get(&ReplayPlayerProperty::ClanTag.into()).unwrap().as_string(),
+                        avatarid: entity.data.get(&ReplayPlayerProperty::AvatarId.into()).unwrap().as_u32().into(),
+                        shipid: -1, // Naive implementation
+                        playerid: entity.data.get(&ReplayPlayerProperty::Id.into()).unwrap().as_u32().into(),
+                        teamid: -1, // Naive implementation
+                        health: entity.data.get(&ReplayPlayerProperty::MaxHealth.into()).unwrap().as_u32().into(),
+                        raw: HashMap::new(), // Naive implementation
+                    });
+                }
+            }).collect();
+        debug!("{:?}", players);
+        DecodedPacketPayload::EntityInfo {
+            players: players,
         }
     }
 }
