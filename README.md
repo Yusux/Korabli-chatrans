@@ -18,7 +18,7 @@
 
 This is a real-time chat interpreter for Korabli developed from [wows-replays](https://github.com/lkolbly/wows-replays). It gets the chat messages from the `temp.wowsreplay` and `tempArenaInfo.json` files in the `replays` folder under the game root directory, translates them to the selected language and sends the result to the client via a WebSocket server. The translation is done using the [Aliyun Translation API](https://www.aliyun.com/product/ai/alimt). 
 
-For clients, any WebSocket client can be used to connect to the server. The messages are turned into strings by Chatrans before sending them to the client. A available client is [WebSocket-Receiver](https://github.com/Yusux/WebSocket-Receiver), which is a WebSocket receiving client in HTML. The demo of the client can be found [here](http://lab.yusux.xyz/WebSocket-Receiver). Be cautious that since the server is using `ws` instead of `wss`, you should use `http` instead of `https` to access the website client.
+For clients, any WebSocket client can be used to connect to the server. The messages are turned into strings by Chatrans before sending them to the client. A available client is [WebSocket-Receiver](https://github.com/Yusux/WebSocket-Receiver), which is a WebSocket receiving client in HTML. The demo of the client can be found [here](http://lab.rorin.cc/WebSocket-Receiver). Be cautious that since the server is using `ws` instead of `wss`, you should use `http` instead of `https` to access the website client.
 
 
 ### Todo List
@@ -36,7 +36,6 @@ You can also compile the project yourself. The following instructions will help 
 
 - rustc
   - Installation: [Rustup](https://rustup.rs/)
-  - 1.76.0 (Stable, Windows and Linux) and 1.78.0 (Nightly, Linux) are tested.
 
 ### *Compilation
 
@@ -49,6 +48,7 @@ You can also compile the project yourself. The following instructions will help 
     ``` sh
     git submodule update --init --recursive
     ```
+    > P.S. This part is for getting the `scripts` folder unpacked from the game. We provide the latest scripts from the official server in [Korabli-scripts](https://github.com/Yusux/Korabli-scripts), but we cannot guarantee that it will be updated in time for every server update. If the previous version of Chatrans cannot work properly after the game version is updated, please try to update this submodule first or unpack the scripts yourself and put them in the `addons/scripts` folder.
 3. Compile the project.
     ``` sh
     cargo build --release
@@ -94,8 +94,6 @@ This should be enough for personal daily use. In this case, you can use the foll
 ```
 
 ![Serving with API](docs/images/serving_with_api.png)
-
-~~The game is installed on the C drive because I only have one SSD 😭, although that's not a huge problem. Please support me if you can, such as giving this repository a star.~~
 
 Open the client and connect to the server. The messages will be sent to the client in real-time. The format of the messages is `[Time] Sender to Audience: Translated |Original|`.
 ![Serving with API - Connecting](docs/images/serving_with_api_connecting.png)
