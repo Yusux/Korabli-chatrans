@@ -12,6 +12,8 @@ use crate::error::*;
 use crate::rpc::entitydefs::*;
 use crate::rpc::typedefs::ArgValue;
 
+use tracing::debug;
+
 #[derive(Debug, Serialize, Clone)]
 pub struct Vec3 {
     pub x: f32,
@@ -178,7 +180,7 @@ pub struct MapPacket<'replay> {
 
 #[derive(Debug, Serialize)]
 pub struct EntityInfoItem<'replay> {
-    pub unknown: Option<u8>,
+    pub msg_type: Option<u8>,
     // pub blob: EntityInfoItemUnion<'replay>,
     pub blob: &'replay [u8],
 }
@@ -738,6 +740,7 @@ impl<'argtype> Parser<'argtype> {
             result.push(&data[start..]);
             result
         }
+        debug!("Parsing entity info packet, raw: {:?}", i);
         let parts = split_by_sequence(i, &[40, 2, 0, 0, 0, 105]);
         let (i, unknown) = take(parts[0].len())(i)?;
         let mut entities = Vec::new();
@@ -745,15 +748,13 @@ impl<'argtype> Parser<'argtype> {
         for part in parts[1..].iter() {
             // The remaining is like "4, 0, 0, 0, 105, 228, 228, 204, 0,"
             // The first 4 bytes should be the property id following ReplayPlayerProperty
-            // let (new_i, property_id) = le_u32(new_i)?;
             let (new_i, property_id) = le_u32(*part)?;
             // The following 1 byte is unknown
-            // let (new_i, unknown2) = le_u8(new_i)?;
-            let (new_i, unknown2) = match new_i.len() {
+            let (new_i, msg_type) = match new_i.len() {
                 0 => (new_i, None),
                 _ => {
-                    let (new_i, unknown2) = le_u8(new_i)?;
-                    (new_i, Some(unknown2))
+                    let (new_i, msg_type) = le_u8(new_i)?;
+                    (new_i, Some(msg_type))
                 }
                 
             };
@@ -762,16 +763,16 @@ impl<'argtype> Parser<'argtype> {
             items.insert(
                 property_id,
                 EntityInfoItem {
-                    unknown: unknown2,
+                    msg_type: msg_type,
                     blob: new_i,
                 },
             );
-            // If the entity is bot, max property_id is 27,
+            // If the entity is bot, max property_id is 28,
             // and the items has not key 16,
-            // else the entity is player, and max property_id is 37
-            if (property_id == 27 && !items.contains_key(&16)) || property_id == 37 {
+            // else the entity is player, and max property_id is 38
+            if (property_id == 28 && !items.contains_key(&16)) || property_id == 38 {
                 entities.push(EntityInfo {
-                    is_bot: property_id == 27,
+                    is_bot: property_id == 28,
                     data: items,
                 });
                 items = HashMap::new();

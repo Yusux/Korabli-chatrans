@@ -35,7 +35,7 @@ struct Client {
 
 fn main() {
     let _collector = tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
+        .with_max_level(Level::DEBUG)
         .init();
 
     let client = Client::parse();
