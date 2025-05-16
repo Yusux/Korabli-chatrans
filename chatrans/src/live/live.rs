@@ -37,13 +37,13 @@ impl LiveMonitor {
     }
 
     async fn parse_live_chat(&self) -> Result<()> {
-        let temp_replay = self.replay_dir.join("temp.wowsreplay");
+        let temp_replay = self.replay_dir.join("temp.korablireplay");
         let info_json = self.replay_dir.join("tempArenaInfo.json");
         info!("Parsing live chat from temp replay: {:?}", temp_replay);
         info!("Parsing live chat from json: {:?}", info_json);
     
         // Check if the file exists
-        if !temp_replay.exists() && !info_json.exists() {
+        if !(temp_replay.exists() && info_json.exists()) {
             return Err(anyhow!("Temp Replay file not found"));
         }
     

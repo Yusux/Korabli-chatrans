@@ -748,7 +748,7 @@ impl<'argtype> Parser<'argtype> {
         for part in parts[1..].iter() {
             // The remaining is like "4, 0, 0, 0, 105, 228, 228, 204, 0,"
             // The first 4 bytes should be the property id following ReplayPlayerProperty
-            let (new_i, property_id) = le_u32(*part)?;
+            let (new_i, mut property_id) = le_u32(*part)?;
             // The following 1 byte is unknown
             let (new_i, msg_type) = match new_i.len() {
                 0 => (new_i, None),
@@ -760,6 +760,13 @@ impl<'argtype> Parser<'argtype> {
             };
             // The following bytes are the property value
             // Create the item and insert it into the hashmap
+            if property_id == 0 && items.contains_key(&0) {
+                // This is a special case, where the property id is 0
+                // and the item already exists in the hashmap
+                // We should rename the key to 3 to ignore the useless original
+                // property id 3
+                property_id = 3;
+            }
             items.insert(
                 property_id,
                 EntityInfoItem {
@@ -767,12 +774,13 @@ impl<'argtype> Parser<'argtype> {
                     blob: new_i,
                 },
             );
-            // If the entity is bot, max property_id is 28,
-            // and the items has not key 16,
-            // else the entity is player, and max property_id is 38
-            if (property_id == 28 && !items.contains_key(&16)) || property_id == 38 {
+            debug!("Property id: {}, msg_type: {:?}, blob: {:?}", property_id, msg_type, new_i);
+            // If the entity is bot, max property_id is 29,
+            // and the items has not key 17,
+            // else the entity is player, and max property_id is 39
+            if (property_id == 29 && !items.contains_key(&17)) || property_id == 39 {
                 entities.push(EntityInfo {
-                    is_bot: property_id == 28,
+                    is_bot: property_id == 29,
                     data: items,
                 });
                 items = HashMap::new();
