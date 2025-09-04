@@ -271,7 +271,7 @@ pub struct Parser<'argtype> {
 }
 
 impl<'argtype> Parser<'argtype> {
-    pub fn new(entities: &'argtype Vec<EntitySpec>) -> Parser {
+    pub fn new(entities: &'argtype Vec<EntitySpec>) -> Parser<'argtype> {
         Parser {
             specs: entities,
             entities: HashMap::new(),

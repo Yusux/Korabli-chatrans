@@ -1,6 +1,7 @@
 use crate::error::ErrorKind;
 use rust_embed::RustEmbed;
 use serde_derive::Serialize;
+use tracing::trace;
 use std::borrow::Cow;
 use std::path::PathBuf;
 
@@ -61,8 +62,8 @@ impl Datafiles {
     }
 
     pub fn get(&self, path: &str) -> Result<Cow<'static, [u8]>, ErrorKind> {
-        let mut p = self.base_path.clone();
-        p.push(path);
+        let p = self.base_path.join(path);
+        trace!("Loading datafile: {:?}", p);
         if !p.exists() {
             if let Some(x) = Embedded::get(&path) {
                 return Ok(x.data);
