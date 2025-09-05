@@ -7,7 +7,7 @@ use anyhow::{Result, anyhow};
 use notify::{
     event::{CreateKind, EventKind},
     Config,
-    RecommendedWatcher,
+    PollWatcher,
     RecursiveMode,
     Watcher,
 };
@@ -19,6 +19,7 @@ use tracing::{debug, info, warn};
 use crate::processor::{ChatMessage, ChatLoggerBuilder};
 
 use replay_parser::{
+    ReplayFile,
     parse_scripts,
     packet2::Parser,
 };
@@ -41,25 +42,27 @@ impl LiveMonitor {
         let info_json = self.replay_dir.join("tempArenaInfo.json");
         info!("Parsing live chat from temp replay: {:?}", temp_replay);
         info!("Parsing live chat from json: {:?}", info_json);
-    
+
         // Check if the file exists
         if !(temp_replay.exists() && info_json.exists()) {
             return Err(anyhow!("Temp Replay file not found"));
         }
-    
+
         // Get datafiles and specs with the version
         let datafiles = replay_parser::version::Datafiles::new(
             PathBuf::from("scripts"),
         )?;
         let specs = parse_scripts(&datafiles)?;
-    
+
+        debug!("Specs loaded: {}", specs.iter().map(|s| s.name.as_str()).collect::<Vec<&str>>().join(", "));
+
         // Assign processor and parser
         let chatlogger = ChatLoggerBuilder::new();
         let processor = chatlogger.build(self.tx.clone());
         let mut analyzer_set = replay_parser::analyzer::AnalyzerAdapter::new(vec![processor]);
         let mut p = Parser::new(&specs);
-    
-        // Monitor the change to the temp.wowsreplay file
+
+        // Monitor the change to the temp.korablireplay file
         // Open the file
         let mut file = File::open(&temp_replay)?;
         // Create a buffer using Vec<u8>
@@ -67,28 +70,28 @@ impl LiveMonitor {
         // Current file offset
         let mut offset = 0;
         loop {
-            // Read the file from the current offset to the end 
-            file.seek(SeekFrom::Start(offset as u64))?;
-            debug!("Offset: {:?}, File size: {:?}", offset, file.metadata()?.len());
-            offset += file.read_to_end(&mut buffer)? as u64;
-    
-            // Parse the packets
-            let parsed_bytes = p.parse_buffer(&buffer, &mut analyzer_set)? as usize;
-            debug!("Parsed bytes number: {:?}", parsed_bytes);
-            buffer.drain(0..parsed_bytes);
-    
             // Determine whether to continue
             if !info_json.exists() {
                 info!("tempArenaInfo.json not found, waiting for the next game");
                 break;
             }
-            
+
+            // Read the file from the current offset to the end 
+            file.seek(SeekFrom::Start(offset as u64))?;
+            debug!("Offset: {:?}, File size: {:?}", offset, file.metadata()?.len());
+            offset += file.read_to_end(&mut buffer)? as u64;
+
+            // Parse the packets
+            let parsed_bytes = p.parse_buffer(&buffer, &mut analyzer_set)? as usize;
+            debug!("Parsed bytes number: {:?}", parsed_bytes);
+            buffer.drain(0..parsed_bytes);
+
             // Sleep for 2 seconds
             sleep(Duration::from_secs(2)).await;
         }
-    
+
         info!("Parsing live chat from temp replay done");
-        
+
         Ok(())
     }
 
@@ -100,8 +103,9 @@ impl LiveMonitor {
             // Check if the file has been created
             if !info_json.exists() {
                 // Create a watcher
+                // FIXME: Not work for filesystem in WSL
                 let (watcher_tx, watcher_rx) = async_channel::bounded(1);
-                let mut watcher = RecommendedWatcher::new(
+                let mut watcher = PollWatcher::new(
                     move |res| {
                         match watcher_tx.send_blocking(res) {
                             Ok(_) => {}
@@ -110,7 +114,9 @@ impl LiveMonitor {
                             }
                         }
                     },
-                    Config::default(),
+                    Config::default()
+                        .with_compare_contents(true)
+                        .with_poll_interval(Duration::from_secs(1))
                 )?;
 
                 // Watch the file

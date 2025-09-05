@@ -73,14 +73,14 @@ impl WebSocketServer {
         mut broadcast_rx: async_broadcast::Receiver<String>,
     ) {
         info!("WebSocket incoming TCP connection from: {}", addr);
-    
+
         let ws_stream = tokio_tungstenite::accept_async(raw_stream)
             .await
             .expect("Error during the websocket handshake occurred");
         info!("WebSocket connection established: {}", addr);
-    
+
         let (mut writer, _reader) = ws_stream.split();
-    
+
         loop {
             let msg = broadcast_rx.recv().await;
             debug!("Received broadcast message: {:?}", msg);
@@ -104,10 +104,10 @@ impl WebSocketServer {
                 }
             }
         }
-    
+
         info!("WebSocket connection closed: {}", addr);
     }
-    
+
     async fn server(
         ip: String,
         port: u16,
@@ -117,12 +117,12 @@ impl WebSocketServer {
         message_rx: async_channel::Receiver<ChatMessage>,
     ) -> Result<(), IoError> {
         let addr = format!("{}:{}", ip, port);
-    
+
         // Create the event loop and TCP listener we'll accept connections on.
         let try_socket = TcpListener::bind(&addr).await;
         let listener = try_socket.expect("Failed to bind");
         info!("Listening on: {}", addr);
-    
+
         // Spawn a task to listen for incoming messages and broadcast them
         let (broadcast_tx, broadcast_rx) = async_broadcast::broadcast(128);
         let interpreter = Interpreter::new(
@@ -153,7 +153,7 @@ impl WebSocketServer {
                 }
             }
         });
-    
+
         // Spawn the handling of each connection in a separate task.
         let messgae_handler = tokio::spawn(async move {
             while let Ok((stream, addr)) = listener.accept().await {
@@ -163,10 +163,10 @@ impl WebSocketServer {
                 });
             }
         });
-    
+
         message_repeater.await.unwrap();
         messgae_handler.await.unwrap();
-    
+
         Ok(())
     }
 
