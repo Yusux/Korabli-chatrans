@@ -314,7 +314,28 @@ impl<'argtype> Parser<'argtype> {
 
         let entity_type = self.entities.get(&entity_id).unwrap().entity_type;
 
-        let spec = &self.specs[entity_type as usize - 1].client_methods[method_id as usize];
+        // In case entity_type or method_id is out of range
+        let spec = match self.specs
+            .get(entity_type as usize - 1)
+            .and_then(|s| s.client_methods.get(method_id as usize))
+        {
+            Some(s) => s,
+            None => {
+                return Err(failure_from_kind(crate::ErrorKind::UnableToProcessPacket {
+                    supertype: entity_id,
+                    subtype: method_id,
+                    reason: "Index out of range in parse_entity_method_packet".to_string(),
+                    packet: {
+                        let mut packet = Vec::new();
+                        packet.extend_from_slice(&entity_id.to_le_bytes());
+                        packet.extend_from_slice(&method_id.to_le_bytes());
+                        packet.extend_from_slice(&payload_length.to_le_bytes());
+                        packet.extend_from_slice(payload);
+                        packet
+                    }
+                }))
+            }
+        };
 
         let mut i = payload;
         let mut args = vec![];
@@ -727,7 +748,7 @@ impl<'argtype> Parser<'argtype> {
         fn split_by_sequence<'a>(data: &'a [u8], sequence: &[u8]) -> Vec<&'a [u8]> {
             let mut result = Vec::new();
             let mut start = 0;
-        
+
             while let Some(index) = data[start..]
                 .windows(sequence.len())
                 .position(|window| window == sequence)
@@ -736,7 +757,7 @@ impl<'argtype> Parser<'argtype> {
                 result.push(&data[start..index]);
                 start = index + sequence.len();
             }
-        
+
             result.push(&data[start..]);
             result
         }
@@ -756,7 +777,7 @@ impl<'argtype> Parser<'argtype> {
                     let (new_i, msg_type) = le_u8(new_i)?;
                     (new_i, Some(msg_type))
                 }
-                
+
             };
             // The following bytes are the property value
             // Create the item and insert it into the hashmap
@@ -862,9 +883,8 @@ impl<'argtype> Parser<'argtype> {
                 )
             }
         };
-        // debug!("type: {}, size: {}, payload: {:?}", packet_type, packet_size, payload);
-        // TODO: Add this back
-        //assert!(i.len() == 0);
+        debug!("type: {}, size: {}, payload: {:?}", packet_type, packet_size, payload);
+
         Ok((
             remaining,
             Packet {

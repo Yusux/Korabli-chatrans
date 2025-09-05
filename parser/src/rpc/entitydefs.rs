@@ -72,6 +72,7 @@ struct DefFile {
     implements: Vec<String>,
 }
 
+#[derive(Debug)]
 pub struct EntitySpec {
     pub name: String,
     pub base_methods: Vec<Method>,
